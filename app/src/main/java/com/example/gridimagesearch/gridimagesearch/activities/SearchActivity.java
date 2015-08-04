@@ -21,6 +21,7 @@ import com.example.gridimagesearch.gridimagesearch.models.ImageResult;
 import com.example.gridimagesearch.gridimagesearch.models.SearchSetting;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.JsonHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
 
 import org.apache.http.Header;
 import org.json.JSONArray;
@@ -36,7 +37,7 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
     private ArrayList<ImageResult> imageResults;
     private ImageResultsAdapter aImageResults;
 
-    final private String STR_IMAGE_API="https://ajax.googleapis.com/ajax/services/search/images?v=1.0&";
+    final private String STR_IMAGE_API="https://ajax.googleapis.com/ajax/services/search/images";
 
     private void setupViews() {
         etQuery = (EditText) findViewById(R.id.etQuery);
@@ -89,9 +90,9 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
         String query = etQuery.getText().toString();
         Toast.makeText(this, "Search for: " + query, Toast.LENGTH_SHORT).show();
 
-        String requestQuery = STR_IMAGE_API + "q=" + query;
         AsyncHttpClient client = new AsyncHttpClient();
-        client.get(requestQuery, new JsonHttpResponseHandler() {
+        RequestParams params = getSearchParams(new SearchSetting(), query, 0);
+        client.get(STR_IMAGE_API, params, new JsonHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
                 Log.d("DEBUG", response.toString());
@@ -121,5 +122,19 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
     @Override
     public void onFinishEditSeachSettingDialog(SearchSetting setting) {
         Toast.makeText(this, setting.toString(), Toast.LENGTH_SHORT);
+    }
+
+    private RequestParams getSearchParams(SearchSetting searchSetting, String query, int start) {
+        int count = 8;
+        RequestParams params = new RequestParams();
+        params.put("v", "1.0");
+        params.put("q", query);
+        params.put("imgcolor", searchSetting.color);
+        params.put("imgsz", searchSetting.size);
+        params.put("imgtype", searchSetting.type);
+        params.put("rsz", count);
+        params.put("start", start);
+
+        return params;
     }
 }
