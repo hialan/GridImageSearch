@@ -1,0 +1,66 @@
+package com.example.gridimagesearch.gridimagesearch.fragments;
+
+import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.DialogFragment;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.Spinner;
+
+import com.example.gridimagesearch.gridimagesearch.R;
+import com.example.gridimagesearch.gridimagesearch.models.SearchSetting;
+
+public class EditSearchSettingDialog extends DialogFragment {
+
+    public interface EditSearchSettingDialogListener {
+        void onFinishEditSeachSettingDialog(SearchSetting setting);
+    }
+
+    public EditSearchSettingDialog() { }
+
+    public static EditSearchSettingDialog newInstance(SearchSetting setting){
+        EditSearchSettingDialog frag = new EditSearchSettingDialog();
+        Bundle args = new Bundle();
+        args.putSerializable("setting", setting);
+        frag.setArguments(args);
+        return frag;
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.search_filter_settings, container);
+        final SearchSetting setting = (SearchSetting) getArguments().getSerializable("setting");
+
+        Spinner spImageSize = (Spinner) view.findViewById(R.id.spImageSize);
+        Spinner spImageColor = (Spinner) view.findViewById(R.id.spImageColor);
+        Spinner spImageType = (Spinner) view.findViewById(R.id.spImageType);
+        setSpinnerAdapter(spImageSize, R.array.image_size_array);
+        setSpinnerAdapter(spImageColor, R.array.image_color_array);
+        setSpinnerAdapter(spImageType, R.array.image_type);
+
+        EditText etSite = (EditText) view.findViewById(R.id.etSite);
+        Button btSaveSetting = (Button) view.findViewById(R.id.btSaveSetting);
+
+        btSaveSetting.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                EditSearchSettingDialogListener listener = (EditSearchSettingDialogListener) getActivity();
+                listener.onFinishEditSeachSettingDialog(setting);
+                dismiss();
+            }
+        });
+
+        return view;
+    }
+
+    private void setSpinnerAdapter(Spinner spinner, int array_resource_id) {
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getActivity(), array_resource_id, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+    }
+}
