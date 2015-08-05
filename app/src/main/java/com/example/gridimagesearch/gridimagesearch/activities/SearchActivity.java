@@ -1,18 +1,23 @@
 package com.example.gridimagesearch.gridimagesearch.activities;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.EditText;
-import android.widget.GridView;
 import android.widget.Toast;
 
+import com.etsy.android.grid.StaggeredGridView;
 import com.example.gridimagesearch.gridimagesearch.R;
 import com.example.gridimagesearch.gridimagesearch.adapters.ImageResultsAdapter;
 import com.example.gridimagesearch.gridimagesearch.fragments.EditSearchSettingDialog;
@@ -38,16 +43,14 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
     final private String typeMap[] = {"face", "photo", "clipart", "linart"};
     final private String STR_IMAGE_API="https://ajax.googleapis.com/ajax/services/search/images";
 
-    private EditText etQuery;
-    private GridView gvResults;
+    private StaggeredGridView gvResults;
     private ArrayList<ImageResult> imageResults;
     private ImageResultsAdapter aImageResults;
     private SearchSetting searchSetting;
     private List<String> colors = null;
 
     private void setupViews() {
-        etQuery = (EditText) findViewById(R.id.etQuery);
-        gvResults = (GridView) findViewById(R.id.gvResults);
+        gvResults = (StaggeredGridView) findViewById(R.id.gvResults);
         gvResults.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -81,8 +84,26 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_search, menu);
-        return true;
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_search, menu);
+
+        MenuItem searchItem = menu.findItem(R.id.action_search);
+        SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                newQuery(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                //newQuery(newText);
+                return true;
+            }
+        });
+
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
@@ -101,13 +122,25 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
         return super.onOptionsItemSelected(item);
     }
 
-    public void onItemSearch(View v) {
-        searchSetting.query = etQuery.getText().toString();
+    private void newQuery(String query) {
+        searchSetting.query = query;
         aImageResults.clear();
         loadDataFromImageAPI(0);
     }
 
+    private Boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting();
+    }
+
     private void loadDataFromImageAPI(int offset) {
+        if(isNetworkAvailable() == false) {
+            Toast.makeText(this, "Internet is unavailable", Toast.LENGTH_SHORT).show();
+            return ;
+        }
+
         AsyncHttpClient client = new AsyncHttpClient();
         RequestParams params = getSearchParams(searchSetting, offset);
         client.get(STR_IMAGE_API, params, new JsonHttpResponseHandler() {
@@ -137,8 +170,11 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
 
     @Override
     public void onFinishEditSeachSettingDialog(SearchSetting newSetting) {
-        Toast.makeText(this, newSetting.toString(), Toast.LENGTH_SHORT);
+        String oldQeury = searchSetting.query;
         searchSetting.copy(newSetting);
+        if(oldQeury != null && oldQeury.length() > 0) {
+            newQuery(oldQeury);
+        }
     }
 
     private RequestParams getSearchParams(SearchSetting searchSetting, int start) {
@@ -153,7 +189,7 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
         params.put("rsz", count);
         params.put("start", start);
 
-        Toast.makeText(this, searchSetting.toString(), Toast.LENGTH_SHORT);
+//        Toast.makeText(this, searchSetting.toString(), Toast.LENGTH_SHORT).show();
 
         return params;
     }

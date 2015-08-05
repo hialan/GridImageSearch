@@ -13,7 +13,7 @@ public class SearchSetting implements Serializable {
     public String query;
 
     public String toString() {
-        return "size: " + size + " color: " + color + " type: " + type + " site: " + site;
+        return "size: " + size + " color: " + color + " type: " + type + " site: " + site + " query: " + query;
     }
 
     public SearchSetting copy(SearchSetting newSetting) {
