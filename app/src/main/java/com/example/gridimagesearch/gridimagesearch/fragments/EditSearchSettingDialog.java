@@ -30,25 +30,42 @@ public class EditSearchSettingDialog extends DialogFragment {
         return frag;
     }
 
+    private SearchSetting setting;
+    private Spinner spImageSize;
+    private Spinner spImageColor;
+    private Spinner spImageType;
+    private Button btSaveSetting;
+    private EditText etSite;
+
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.search_filter_settings, container);
-        final SearchSetting setting = (SearchSetting) getArguments().getSerializable("setting");
+        setting = (SearchSetting) getArguments().getSerializable("setting");
 
-        Spinner spImageSize = (Spinner) view.findViewById(R.id.spImageSize);
-        Spinner spImageColor = (Spinner) view.findViewById(R.id.spImageColor);
-        Spinner spImageType = (Spinner) view.findViewById(R.id.spImageType);
+        spImageSize = (Spinner) view.findViewById(R.id.spImageSize);
+        spImageColor = (Spinner) view.findViewById(R.id.spImageColor);
+        spImageType = (Spinner) view.findViewById(R.id.spImageType);
         setSpinnerAdapter(spImageSize, R.array.image_size_array);
         setSpinnerAdapter(spImageColor, R.array.image_color_array);
         setSpinnerAdapter(spImageType, R.array.image_type);
 
-        EditText etSite = (EditText) view.findViewById(R.id.etSite);
-        Button btSaveSetting = (Button) view.findViewById(R.id.btSaveSetting);
+        spImageSize.setSelection(setting.size);
+        spImageType.setSelection(setting.type);
+        spImageColor.setSelection(setting.color);
 
+        etSite = (EditText) view.findViewById(R.id.etSite);
+
+        btSaveSetting = (Button) view.findViewById(R.id.btSaveSetting);
         btSaveSetting.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                setting.size = spImageSize.getSelectedItemPosition();
+                setting.type = spImageType.getSelectedItemPosition();
+                setting.color = spImageColor.getSelectedItemPosition();
+                setting.site = etSite.getText().toString();
+
                 EditSearchSettingDialogListener listener = (EditSearchSettingDialogListener) getActivity();
                 listener.onFinishEditSeachSettingDialog(setting);
                 dismiss();

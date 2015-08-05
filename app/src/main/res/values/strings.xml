@@ -19,6 +19,7 @@
         <item>brown</item>
         <item>gray</item>
         <item>green</item>
+        <item>orange</item>
     </string-array>
 
     <string-array name="image_type">

@@ -29,15 +29,21 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class SearchActivity extends AppCompatActivity implements EditSearchSettingDialogListener {
+    final private String sizeMap[] = {"icon", "medium", "xxlarge", "huge"};
+    final private String typeMap[] = {"face", "photo", "clipart", "linart"};
+    final private String STR_IMAGE_API="https://ajax.googleapis.com/ajax/services/search/images";
+
     private EditText etQuery;
     private GridView gvResults;
     private ArrayList<ImageResult> imageResults;
     private ImageResultsAdapter aImageResults;
-
-    final private String STR_IMAGE_API="https://ajax.googleapis.com/ajax/services/search/images";
+    private SearchSetting searchSetting;
+    private List<String> colors = null;
 
     private void setupViews() {
         etQuery = (EditText) findViewById(R.id.etQuery);
@@ -51,6 +57,13 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
                 startActivity(i);
             }
         });
+        gvResults.setOnScrollListener(new EndlessScrollListener() {
+            @Override
+            public void onLoadMore(int page, int totalItemsCount) {
+                int offset = page * 8;
+                loadDataFromImageAPI(offset);
+            }
+        });
     }
 
     @Override
@@ -61,6 +74,8 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
         imageResults = new ArrayList<>();
         aImageResults = new ImageResultsAdapter(this, imageResults);
         gvResults.setAdapter(aImageResults);
+        searchSetting = new SearchSetting();
+        colors = Arrays.asList(getResources().getStringArray(R.array.image_color_array));
     }
 
     @Override
@@ -87,11 +102,14 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
     }
 
     public void onItemSearch(View v) {
-        String query = etQuery.getText().toString();
-        Toast.makeText(this, "Search for: " + query, Toast.LENGTH_SHORT).show();
+        searchSetting.query = etQuery.getText().toString();
+        aImageResults.clear();
+        loadDataFromImageAPI(0);
+    }
 
+    private void loadDataFromImageAPI(int offset) {
         AsyncHttpClient client = new AsyncHttpClient();
-        RequestParams params = getSearchParams(new SearchSetting(), query, 0);
+        RequestParams params = getSearchParams(searchSetting, offset);
         client.get(STR_IMAGE_API, params, new JsonHttpResponseHandler() {
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject response) {
@@ -100,7 +118,7 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
 
                 try {
                     imageResultJson = response.getJSONObject("responseData").getJSONArray("results");
-                    imageResults.clear();
+                    //imageResults.clear();
                     aImageResults.addAll(ImageResult.fromJSONArray(imageResultJson));
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -109,31 +127,33 @@ public class SearchActivity extends AppCompatActivity implements EditSearchSetti
                 Log.i("INFO", imageResults.toString());
             }
         });
-
     }
 
     private void showEditSettingDialog() {
         FragmentManager fm = getSupportFragmentManager();
-        SearchSetting searchSetting = new SearchSetting();
         EditSearchSettingDialog editSearchSettingDialog = EditSearchSettingDialog.newInstance(searchSetting);
         editSearchSettingDialog.show(fm, "fragment_edit_name");
     }
 
     @Override
-    public void onFinishEditSeachSettingDialog(SearchSetting setting) {
-        Toast.makeText(this, setting.toString(), Toast.LENGTH_SHORT);
+    public void onFinishEditSeachSettingDialog(SearchSetting newSetting) {
+        Toast.makeText(this, newSetting.toString(), Toast.LENGTH_SHORT);
+        searchSetting.copy(newSetting);
     }
 
-    private RequestParams getSearchParams(SearchSetting searchSetting, String query, int start) {
+    private RequestParams getSearchParams(SearchSetting searchSetting, int start) {
         int count = 8;
         RequestParams params = new RequestParams();
         params.put("v", "1.0");
-        params.put("q", query);
-        params.put("imgcolor", searchSetting.color);
-        params.put("imgsz", searchSetting.size);
-        params.put("imgtype", searchSetting.type);
+        params.put("q", searchSetting.query);
+        params.put("imgcolor", colors.get(searchSetting.color));
+        params.put("imgsz", sizeMap[searchSetting.size]);
+        params.put("imgtype", typeMap[searchSetting.type]);
+        params.put("as_sitesearch", searchSetting.site);
         params.put("rsz", count);
         params.put("start", start);
+
+        Toast.makeText(this, searchSetting.toString(), Toast.LENGTH_SHORT);
 
         return params;
     }
